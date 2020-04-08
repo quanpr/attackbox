@@ -7,6 +7,7 @@ import scipy.spatial
 from scipy.linalg import qr
 #from qpsolvers import solve_qp
 import random
+import pdb
 
 start_learning_rate = 1.0
 MAX_ITER = 1000
@@ -44,7 +45,7 @@ class OPT_attack_sign_SGD(object):
     def __init__(self, model, k=200, train_dataset=None):
         self.model = model
         self.k = k
-        self.train_dataset = train_dataset 
+        self.train_dataset = np.random.shuffle(train_dataset.data)
         self.log = torch.ones(MAX_ITER,2)
 
     def get_log(self):

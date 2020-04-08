@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from torch.autograd import Variable
+import pdb
 
 class PytorchModel(object):
     def __init__(self,model, bounds, num_classes):
@@ -11,6 +12,8 @@ class PytorchModel(object):
         self.num_queries = 0
     
     def predict(self,image):
+        if isinstance(image, tuple):
+            image = image[0]
         image = torch.clamp(image,self.bounds[0],self.bounds[1]).cuda()
         if len(image.size())!=4:
             image = image.unsqueeze(0)

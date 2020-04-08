@@ -5,6 +5,8 @@ from allmodels import MNIST, load_model, load_mnist_data, load_cifar10_data, CIF
 #from wideresnet import *
 import os, argparse
 import numpy as np
+import pdb
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, default="MNIST",
                     help='Dataset to be used, [MNIST, CIFAR10, Imagenet]')
@@ -27,13 +29,14 @@ parser.add_argument('--test_batch_size', type=int, default=1,
                     help='test batch_size')
 parser.add_argument('--test_batch', type=int, default=10,
                     help='test batch number')
+parser.add_argument('--seed', type=int, default=0,
+                    help='default seed')
 parser.add_argument('--model_dir', type=str, required=True, help='model loading directory')
 
 
 args = parser.parse_args()
 np.random.seed(args.seed)
 torch.manual_seed(args.seed)
-
 
 
 if args.dataset == "MNIST":
@@ -88,6 +91,8 @@ model = net
 amodel = PytorchModel(model, bounds=[0,1], num_classes=10)
 if args.attack=="Bandit":
     attack = attack_list[args.attack](amodel,args.exploration,args.fd_eta,args.online_lr,args.mode)
+elif args.attack == 'Sign_OPT':
+    attack = attack_list[args.attack](amodel, train_dataset=train_dataset)
 else:
     attack = attack_list[args.attack](amodel)
 
@@ -105,7 +110,13 @@ for i, (xi,yi) in enumerate(test_loader):
         break
     xi,yi = xi.cuda(), yi.cuda()
     #adv=attack(xi,yi, 0.2)
-    adv=attack(xi,yi,epsilon=args.epsilon, TARGETED=args.targeted)
+    if args.attack in ('OPT_attack', 'Sign_OPT'):
+        target=np.random.choice(10,size=1)
+        while target ==  yi:
+            target=np.random.choice(10,size=1)
+        adv=attack(xi,yi,target=target, TARGETED=args.targeted)
+    else:
+        adv=attack(xi,yi,epsilon=args.epsilon, TARGETED=args.targeted)
 
     if args.targeted == False:
         r_count= (torch.max(amodel.predict(adv),1)[1]==yi).nonzero().shape[0]
